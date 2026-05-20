@@ -3,17 +3,26 @@ FROM mcr.microsoft.com/playwright:v1.44.0-jammy
 
 WORKDIR /app
 
-# ── Python + ffmpeg for the captcha solver / DrissionPage login ──────────────
-# DrissionPage drives Chromium directly — we install python3 alongside the
-# Playwright image (Node ecosystem) so the auto-login fallback works without
-# a separate sidecar container.
+# ── Python + ffmpeg + Google Chrome for the captcha solver / DrissionPage ────
+# DrissionPage drives Chrome directly. The Playwright base image bundles
+# Chromium at a non-standard path, which DrissionPage can't auto-detect, so
+# we install Google Chrome stable separately to get /usr/bin/google-chrome
+# (and a `google-chrome-stable` shim DrissionPage finds via PATH).
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      python3 python3-pip ffmpeg \
+      python3 python3-pip ffmpeg wget gnupg ca-certificates \
+ && wget -q -O- https://dl.google.com/linux/linux_signing_key.pub \
+      | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+ && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+      > /etc/apt/sources.list.d/google-chrome.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends google-chrome-stable \
  && rm -rf /var/lib/apt/lists/*
 
 # Symlink so /usr/bin/python resolves (Python script uses `python`, not `python3`)
-RUN ln -sf /usr/bin/python3 /usr/bin/python
+# and DrissionPage finds `chrome` (it tries the bare name on PATH first).
+RUN ln -sf /usr/bin/python3 /usr/bin/python \
+ && ln -sf /usr/bin/google-chrome-stable /usr/bin/chrome
 
 # ── Node deps ────────────────────────────────────────────────────────────────
 COPY package*.json ./

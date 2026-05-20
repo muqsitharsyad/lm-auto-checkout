@@ -232,17 +232,32 @@ async function main(): Promise<void> {
   logger.info(`Cooldown       : ${config.checkoutCooldownSeconds}s after success`);
   logger.info("");
 
-  // Session must exist before we can do HTTP-only checkout. If it doesn't,
-  // tell the user to run `npm run dev:login` first — we don't auto-login on
-  // startup because that would defeat the "idle-cost zero" goal.
+  // Session check on startup. If missing, attempt auto-login (Python script).
+  // This makes the service self-healing on a fresh server (no manual `dev:login` step).
   const hasSession = await fileExists(config.sessionFile);
   if (!hasSession) {
-    logger.error(
-      `[Init] Session file not found at ${config.sessionFile}. Run "npm run dev:login" first to create it.`,
+    logger.warn(
+      `[Init] Session file not found at ${config.sessionFile} — attempting auto-login...`,
     );
-    process.exit(1);
+    const { attemptAutoLogin } = await import(
+      "../../infrastructure/logammulia/session-keepalive"
+    );
+    const ok = await attemptAutoLogin(config);
+    if (!ok) {
+      logger.error(
+        "[Init] Auto-login failed. Service will start anyway and rely on keepalive to recover.",
+      );
+      // Fire Telegram alert so the operator knows
+      await sendSessionExpiredAlert(
+        config.telegramBotToken,
+        config.telegramChatId,
+      ).catch(() => {});
+    } else {
+      logger.info("[Init] ✓ Auto-login succeeded — session.json created");
+    }
+  } else {
+    logger.info(`[Init] ✓ Session file present (${config.sessionFile})`);
   }
-  logger.info(`[Init] ✓ Session file present (${config.sessionFile})`);
 
   // Start webhook server (lightweight, ready in milliseconds)
   startWebhookServer(config.webhookPort, handleCheckoutTrigger);

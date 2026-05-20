@@ -21,7 +21,7 @@ RUN npm ci
 
 # ── Python deps (from scripts/requirements.txt) ──────────────────────────────
 COPY scripts/requirements.txt ./scripts/requirements.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r scripts/requirements.txt
+RUN pip3 install --no-cache-dir -r scripts/requirements.txt
 
 # ── Source + scripts ─────────────────────────────────────────────────────────
 COPY tsconfig.json ./

@@ -116,11 +116,12 @@ def make_browser(profile_dir: str, headless: bool = False) -> ChromiumPage:
     options.set_argument('--window-size=1366,768')
     options.set_argument('--enable-webgl')
     options.set_argument('--enable-gpu')
+    options.set_argument('--no-sandbox')
+    options.set_argument('--disable-dev-shm-usage')
 
     if headless:
         options.set_argument('--headless=new')
         options.set_argument('--disable-gpu')
-        options.set_argument('--no-sandbox')
     else:
         # Hide window off-screen for unattended runs
         options.set_argument('--window-position=-2000,-2000')

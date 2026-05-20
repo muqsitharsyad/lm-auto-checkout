@@ -3,14 +3,14 @@ FROM mcr.microsoft.com/playwright:v1.44.0-jammy
 
 WORKDIR /app
 
-# ── Python + ffmpeg + Google Chrome for the captcha solver / DrissionPage ────
-# DrissionPage drives Chrome directly. The Playwright base image bundles
-# Chromium at a non-standard path, which DrissionPage can't auto-detect, so
-# we install Google Chrome stable separately to get /usr/bin/google-chrome
-# (and a `google-chrome-stable` shim DrissionPage finds via PATH).
+# ── Python + ffmpeg + Google Chrome + Xvfb for the captcha solver ────────────
+# DrissionPage drives Chrome directly. Google blocks reCAPTCHA in headless mode
+# even with stealth, so we run Chrome non-headless inside an X virtual framebuffer
+# (Xvfb) — the browser thinks it has a display, server stays headless overall.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       python3 python3-pip ffmpeg wget gnupg ca-certificates \
+      xvfb \
  && wget -q -O- https://dl.google.com/linux/linux_signing_key.pub \
       | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
  && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \

@@ -19,6 +19,8 @@ export interface AppConfig {
   lmPassword: string;
   telegramBotToken: string;
   telegramChatId: string;
+  /** Public URL of /auth endpoint (sent in Telegram alerts as login link). */
+  authUrl: string;
   /** Target gramasi to checkout (e.g., [0.5, 1, 2, 3]). Empty = all available */
   targetWeights: number[];
   /** Webhook port for receiving checkout triggers from stock-scheduler */
@@ -41,6 +43,7 @@ export function loadConfig(): AppConfig {
   const lmPassword = requireEnv("LM_PASSWORD");
   const telegramBotToken = requireEnv("TELEGRAM_BOT_TOKEN");
   const telegramChatId = requireEnv("TELEGRAM_CHAT_ID");
+  const authUrl = optionalEnv("AUTH_URL", "");
 
   const targetWeightsRaw = optionalEnv("TARGET_WEIGHTS", "0.5,1,2,3");
   const targetWeights = targetWeightsRaw
@@ -70,6 +73,7 @@ export function loadConfig(): AppConfig {
     lmPassword,
     telegramBotToken,
     telegramChatId,
+    authUrl,
     targetWeights,
     webhookPort,
     headless,

@@ -59,7 +59,7 @@ export async function keepSessionAlive(sessionFile: string): Promise<boolean> {
       return false;
     }
 
-    logger.debug("[Keepalive] Session alive ✓");
+    logger.info("[Keepalive] Session alive ✓");
     return true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -92,16 +92,19 @@ export async function attemptAutoLogin(config: AppConfig): Promise<boolean> {
       "--session-out",
       config.sessionFile,
     ];
-    // Default to non-headless: Google blocks headless reCAPTCHA. Use a hidden
-    // off-screen window (set inside the Python script) for unattended runs.
-    // Caller can set HEADLESS=true in env to override.
-    if (config.headless) {
-      args.push("--headless");
-    }
+    // Always run non-headless (better captcha pass rate). On Linux servers without
+    // a display, we wrap with xvfb-run to provide a virtual framebuffer.
+    // On Windows (local dev), DrissionPage positions the window off-screen.
+
+    const isLinux = process.platform === "linux";
+    const command = isLinux ? "xvfb-run" : "python";
+    const fullArgs = isLinux
+      ? ["--auto-servernum", "--server-args=-screen 0 1366x768x24", "python", ...args]
+      : args;
 
     const proc = execFile(
-      "python",
-      args,
+      command,
+      fullArgs,
       {
         timeout: 180_000,
         env: {

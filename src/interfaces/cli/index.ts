@@ -251,6 +251,7 @@ async function main(): Promise<void> {
       await sendSessionExpiredAlert(
         config.telegramBotToken,
         config.telegramChatId,
+        config.authUrl || undefined,
       ).catch(() => {});
     } else {
       logger.info("[Init] ✓ Auto-login succeeded — session.json created");
@@ -282,7 +283,7 @@ async function main(): Promise<void> {
   // Sends Telegram alert if session expires.
   startKeepaliveLoop(
     config,
-    () => sendSessionExpiredAlert(config.telegramBotToken, config.telegramChatId),
+    () => sendSessionExpiredAlert(config.telegramBotToken, config.telegramChatId, config.authUrl || undefined),
     5 * 60 * 1000,
   );
 

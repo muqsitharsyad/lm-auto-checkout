@@ -129,10 +129,12 @@ export async function sendCheckoutFailureNotification(
 
 /**
  * Sends an alert when the session has expired and needs manual login.
+ * Includes a tap-to-login URL pointing to the /auth endpoint of the auto-checkout service.
  */
 export async function sendSessionExpiredAlert(
   botToken: string,
   chatId: string,
+  authUrl?: string,
 ): Promise<void> {
   const now = new Date().toLocaleString('id-ID', {
     timeZone: 'Asia/Jakarta',
@@ -143,16 +145,23 @@ export async function sendSessionExpiredAlert(
     minute: '2-digit',
   });
 
-  const message = [
+  const lines = [
     '🔐 <b>SESSION EXPIRED</b>',
     '',
     'Session login Logam Mulia sudah expired.',
+    'Klik link di bawah untuk login ulang (bisa dari HP):',
     '',
-    'Jalankan: <code>npm run dev:login</code>',
-    'Atau buka browser dan login manual.',
-    '',
-    `🕐 ${now} WIB`,
-  ].join('\n');
+  ];
 
-  await sendTelegramMessage(message, botToken, chatId);
+  if (authUrl) {
+    lines.push(`🔗 <a href="${authUrl}">Login Sekarang</a>`);
+  } else {
+    lines.push('Jalankan: <code>npm run dev:login</code>');
+    lines.push('Atau buka browser dan login manual.');
+  }
+
+  lines.push('');
+  lines.push(`🕐 ${now} WIB`);
+
+  await sendTelegramMessage(lines.join('\n'), botToken, chatId);
 }

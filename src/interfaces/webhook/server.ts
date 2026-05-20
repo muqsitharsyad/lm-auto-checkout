@@ -51,9 +51,11 @@ export function startWebhookServer(port: number, onCheckout: CheckoutHandler): v
   });
 
   // ── Remote login form ─────────────────────────────────────────────────────
-  app.get('/auth', (_req, res) => {
+  app.get('/auth', (req, res) => {
     const config = getConfig();
     const hasSession = require('fs').existsSync(config.sessionFile);
+    // Use the full AUTH_URL for form action so it works behind reverse proxy
+    const formAction = config.authUrl || '/auth';
     res.send(`<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LM Auto-Checkout - Login</title>
@@ -76,7 +78,7 @@ export function startWebhookServer(port: number, onCheckout: CheckoutHandler): v
   <div class="status ${hasSession ? 'ok' : 'expired'}">
     Session: ${hasSession ? '✅ Active' : '❌ Expired / Not Found'}
   </div>
-  <form method="POST" action="/auth" id="loginForm">
+  <form method="POST" action="${formAction}" id="loginForm">
     <label>Email</label>
     <input type="email" name="email" value="${config.lmEmail || ''}" required>
     <label>Password</label>

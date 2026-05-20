@@ -1,0 +1,19 @@
+services:
+  lm-auto-checkout:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${WEBHOOK_PORT:-3300}:${WEBHOOK_PORT:-3300}"
+    volumes:
+      # Mount data/ so session and debug files persist across container restarts
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Jakarta
+      - HEADLESS=true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

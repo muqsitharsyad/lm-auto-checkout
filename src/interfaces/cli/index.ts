@@ -275,8 +275,8 @@ async function main(): Promise<void> {
   // Pre-warm Playwright in background — saves 3-5s on first webhook trigger.
   // Browser idles on /id/checkout, ready to fill form when stock signal arrives.
   void warmupBrowser(config).then(() => {
-    // Refresh the warmed page every 3 minutes to keep session alive
-    startPageRefreshLoop(config, () => isCheckoutInProgress, 3 * 60 * 1000);
+    // Refresh the warmed page every 7 minutes
+    startPageRefreshLoop(config, () => isCheckoutInProgress, 7 * 60 * 1000);
   });
 
   // Session keepalive: ping /id/my-account every 5 minutes.

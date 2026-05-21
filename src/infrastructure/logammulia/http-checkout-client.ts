@@ -137,7 +137,7 @@ async function createClientFromSession(
     axios.create({
       jar,
       withCredentials: true,
-      timeout: 30_000,
+      timeout: 8_000,
       maxRedirects: 5, // Follow redirects automatically
       headers: REQUEST_HEADERS,
     }),

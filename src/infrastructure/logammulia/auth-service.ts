@@ -121,6 +121,17 @@ export async function ensureLoggedIn(
 ): Promise<void> {
   logger.info('[Auth] Checking session validity...');
 
+  // Fast path: if page is already on a logammulia.com URL (e.g. pre-warmed on
+  // /id/checkout), check login status without navigating. Session keepalive
+  // already validates every 5 min, so this fast check is sufficient.
+  const currentUrl = page.url();
+  if (currentUrl.includes('logammulia.com') && !currentUrl.includes('/login')) {
+    if (await isLoggedIn(page)) {
+      logger.info('[Auth] Session is valid (fast path) ✓');
+      return;
+    }
+  }
+
   await withRetry(
     () => page.goto(URLS.purchase, { waitUntil: 'networkidle', timeout: 30_000 }),
     { maxAttempts: 3, delayMs: 2_000 },

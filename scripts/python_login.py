@@ -318,6 +318,7 @@ def login(email: str, password: str, profile_dir: str, session_path: str, headle
         if "/login" not in url_now:
             print("[Login] Already logged in", file=sys.stderr)
             export_to_playwright_format(driver, session_path)
+            sync_profile(profile_dir)
             return True
 
         # Fill credentials
@@ -376,12 +377,49 @@ def login(email: str, password: str, profile_dir: str, session_path: str, headle
             pass
 
         export_to_playwright_format(driver, session_path)
+        sync_profile(profile_dir)
         return True
     finally:
         try:
             driver.quit()
         except Exception:
             pass
+
+
+def sync_profile(profile_dir: str) -> None:
+    """
+    Copies key profile files to a sync directory so stock-scheduler can pick them up.
+    The sync dir is at ../lm-stock-scheduler/.bot_profile (relative to this project)
+    or /app/shared_profile (Docker mount).
+    """
+    import shutil
+
+    sync_targets = [
+        Path(__file__).resolve().parent.parent.parent / "lm-stock-scheduler" / ".bot_profile",  # dev sibling
+        Path("/app/shared_profile"),  # Docker shared volume
+    ]
+
+    src = Path(profile_dir)
+    if not src.exists():
+        return
+
+    for target in sync_targets:
+        try:
+            if target.exists() or target.parent.exists():
+                target.mkdir(parents=True, exist_ok=True)
+                # Copy key files
+                for item in ["Default", "Local State"]:
+                    src_item = src / item
+                    dst_item = target / item
+                    if src_item.is_dir():
+                        if dst_item.exists():
+                            shutil.rmtree(dst_item)
+                        shutil.copytree(src_item, dst_item)
+                    elif src_item.is_file():
+                        shutil.copy2(src_item, dst_item)
+                print(f"[Sync] Profile synced to {target}", file=sys.stderr)
+        except Exception as e:
+            print(f"[Sync] Could not sync to {target}: {e}", file=sys.stderr)
 
 
 def main() -> int:
